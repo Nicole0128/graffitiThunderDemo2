@@ -1,0 +1,444 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  margin: 0;
+  background-color: black;
+  font-family: 'Arial', sans-serif;
+  overflow: hidden;
+}
+
+canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: -1;
+  width: 100vw;    /* 保證畫布佔滿整個横向視窗 */
+  height: 100vh;   /* 保證畫布佔滿整個縱向視窗 */
+}
+
+#ui-container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(86, 85, 85, 0.1);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px;
+  gap: 10px;
+  z-index: 1;  /* <<<<<<<< 一定要這樣 */
+}
+
+.btn, .slider-label {
+  color: white;
+  font-size: 16px;
+}
+
+.btn {
+  padding: 10px 20px;
+  background: linear-gradient(to right, #444, #222);
+  border: 1px solid white;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #555;
+}
+
+#background-thumbs {
+  position: fixed;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  z-index: 10;
+}
+
+.thumb {
+  border: 2px solid white;
+  border-radius: 4px;
+  width: 100px;
+  height: 75px;
+  object-fit: cover;
+  cursor: pointer;
+  box-shadow: 0 0 10px black;
+}
+
+#brush-size-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.neon-btn {
+  background: linear-gradient(90deg, #37e6ff, #f04aff);
+  color: white;
+  border-color: #fff;
+  box-shadow:
+    0 0 12px 4px #37e6ffcc,   /* 藍暈 */
+    0 0 16px 2px #f04aff88,   /* 粉暈 */
+    0 0 0px 2px #fff4 inset;
+}
+
+.flame-btn {
+  background: linear-gradient(90deg, #ff9800, #ff1744 90%);
+  color: white;
+  border-color: #fff2e0;
+  box-shadow:
+    0 0 14px 4px #ff9800bb,
+    0 0 18px 2px #ff1744aa,
+    0 0 0px 2px #fff2 inset;
+}
+
+.industrial-btn {
+  background: linear-gradient(90deg, #adb1b8, #56595c 80%);
+  color: #222;
+  border-color: #d3d4d7;
+  box-shadow:
+    0 0 6px 2px #bbb8,
+    0 0 0px 2px #fff3 inset;
+}
+
+.smoke-btn {
+  background: linear-gradient(90deg, #fafbfc 70%, #e6e6e7 95%);
+  color: #333;
+  border-color: #ccc;
+  box-shadow:
+    0 0 22px 8px #fff9,
+    0 0 6px 2px #aaa6,
+    0 0 0px 2px #fff5 inset;
+}
+
+.liquid-btn {
+  background: linear-gradient(90deg, #49c7fa, #0053a6 90%);
+  color: #fff;
+  border-color: #3ee4fa;
+  box-shadow:
+    0 0 14px 6px #49c7fa99,
+    0 0 20px 2px #0053a666,
+    0 0 0px 2px #fff3 inset;
+}
+
+#brush-size-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: 18px;
+}
+
+#brush-slider {
+  width: 180px;
+  height: 26px;   /* 這裡要跟 thumb 一樣 */
+  background: none;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 13px;
+  box-shadow: 0 2px 14px #37e6ff44, 0 0px 4px #fff2;
+  transition: box-shadow 0.25s;
+  outline: none;
+}
+
+/* 彩色底bar，和 thumb 高度一致 */
+#brush-slider::-webkit-slider-runnable-track {
+  height: 26px;
+  border-radius: 13px;
+  background: linear-gradient(90deg, #37e6ff 10%, #f04aff 100%);
+  position: relative;
+  z-index: 1;
+}
+
+/* 滑塊 thumb */
+#brush-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff 60%, #37e6ff 100%);
+  box-shadow: 0 2px 10px #37e6ff88, 0 0 0 5px #f04aff66 inset;
+  border: 2.5px solid #fff;
+  cursor: pointer;
+  transition: box-shadow 0.22s, background 0.2s;
+}
+
+/* 焦點外觀，可自行微調 */
+#brush-slider:focus {
+  outline: none;
+}
+
+#qrcode-toast {
+  display: none;
+  position: fixed;
+  top: 46px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #181818f2;
+  color: #fff;
+  font-size: 21px;
+  font-weight: bold;
+  padding: 17px 38px;
+  border-radius: 18px;
+  z-index: 11000;  /* 高於qrcode-area */
+  text-align: center;
+  box-shadow: 0 4px 32px #000a;
+  letter-spacing: 1.7px;
+  pointer-events: none;
+  user-select: none;
+}
+
+#qrcode-area {
+  display: none;
+  position: fixed;
+  top: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #181818ee;
+  padding: 34px 34px 28px 34px;
+  border-radius: 18px;
+  z-index: 10000;
+  box-shadow: 0 6px 32px #111c;
+  text-align: center;
+  min-width: 240px;
+  max-width: 360px;
+  
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.qrcode-close-btn {
+  position: absolute;
+  top: 10px;
+  right: 18px;
+  background: none;
+  border: none;
+  font-size: 44px;         /* <<<<<< X 更大！ */
+  color: #fff;
+  cursor: pointer;
+  z-index: 10001;
+  opacity: 0.82;
+  padding: 0 8px;
+  transition: opacity 0.18s, color 0.2s, transform 0.2s;
+  line-height: 1;
+}
+.qrcode-close-btn:hover {
+  color: #f04aff;
+  opacity: 1;
+  transform: scale(1.13) rotate(13deg);
+}
+.qrcode-close-x {
+  font-weight: bold;
+  line-height: 1;
+  display: inline-block;
+}
+
+.qrcode-img-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto;
+  padding: 0;
+  background: transparent;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+#qrcode {
+  display: block;
+  margin: 0 auto;
+  max-width: 230px;
+  height: auto;
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+#loading-area {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(28,28,28,0.86);
+  padding: 32px 46px;
+  border-radius: 20px;
+  box-shadow: 0 8px 40px #222a;
+  z-index: 20000;
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 5px solid #fff3;
+  border-top: 5px solid #37e6ff;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 18px auto;
+}
+
+@keyframes spin {
+  100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 12px #2229;
+}
+
+/*** 1. Hidden class ***/
+.hidden {
+  display: none !important;
+}
+
+/*** 2. Exhibition Screen ***/
+#exhibition-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 1000;  /* 蓋在 canvas 之上 */
+}
+
+/* 主視覺輪播用的 <img> */
+#exhibition-img {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* 「開始創作」按鈕，用既有的 .btn + .neon-btn */
+#start-btn {
+  position: absolute;
+  bottom: 100px;       /* 距離下緣 40px，可自行調整 */
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+}
+
+/*** 3. Instructions Overlay（使用說明彈窗） ***/
+#instructions-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);  /* 半透明深黑遮罩 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;  /* 蓋在展覽畫面之上 */
+}
+
+#instructions-modal {
+  position: relative;
+  width: 80%;
+  max-width: 600px;
+  background: #111;  /* 深灰底，與整體黑底保持一致 */
+  color: #fff;
+  border-radius: 12px;
+  padding: 24px 32px 36px 32px;
+  box-shadow: 0 4px 24px #0008;
+}
+
+/* Modal 標題 */
+#instructions-modal .modal-title {
+  margin-top: 0;
+  font-size: 26px;
+  text-align: center;
+  letter-spacing: 1px;
+}
+
+/* Modal 內文列表 */
+#instructions-modal .modal-list {
+  margin: 16px 0;
+  padding-left: 1.2em;
+  list-style: disc;
+}
+#instructions-modal .modal-list li {
+  margin-bottom: 10px;
+  font-size: 18px;
+  line-height: 1.4;
+}
+
+/* 一般文字說明 */
+#instructions-modal .modal-text {
+  font-size: 18px;
+  text-align: center;
+  margin-top: 16px;
+}
+
+/* Close 按鈕（✕），套用 .btn + .smoke-btn，再加上 .small-close-btn 做尺寸調整 */
+#close-instructions {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  width: auto;
+  height: auto;
+  padding: 4px 8px;
+  background: none;  /* 先清除原本 .btn 可能有的背景，讓 .smoke-btn 漸層更明顯 */
+  border: none;
+  color: #fff;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 10;
+
+}
+
+#close-instructions:hover {
+  color: #f04aff;
+  transform: scale(1.2) rotate(15deg);
+}
+
+/*** 4. Canvas 與 UI 容器（與先前設定完全一樣，只是統一放在這裡） ***/
+#canvas-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* 背景層 */
+}
+
+canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1; /* 避免蓋住 UI */
+}
+
+#ui-container {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px;
+  gap: 10px;
+  z-index: 100;
+}
+
+/* 其餘 .btn、.neon-btn、.flame-btn、.smoke-btn、slider、thumbs、QRCode、loading……等樣式請保留您原本的設定 */
+

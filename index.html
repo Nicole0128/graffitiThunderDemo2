@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Graffiti Brushes</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <!-- ▷ 1. Exhibition Mode（展覽主視覺＋輪播） -->
+  <div id="exhibition-screen">
+    <!-- 這裡放一個 <img>，src 會由 JS 輪播三張 main*.jpg -->
+    <img id="exhibition-img"
+         src="main1.png"
+         alt="Exhibition Visual" />
+
+   <!-- 開始創作按鈕，一樣套用 .btn.neon-btn -->
+    <button id="start-btn" class="btn neon-btn">
+      開始創作
+    </button>
+  </div>
+
+  <!-- ▷ 2. Instructions Modal (使用說明彈窗)，預設隱藏 -->
+  <div id="instructions-overlay" class="hidden">
+    <div id="instructions-modal">
+      <!-- Close 按鈕使用 .btn.smoke-btn，並加小尺寸 .small-close-btn -->
+      <button id="close-instructions" class="close-button">&times;
+      </button>
+
+  <!-- 說明文字（可自行調整與補充） -->
+      <h2 class="modal-title">使用說明</h2>
+      <ul class="modal-list">
+        <li>使用apple pencil、觸控或滑鼠在畫布上繪製塗鴉。</li>
+        <li>可先從頂部選擇背景風格，再從底部工具列選擇喜歡的筆刷。</li>
+        <li>畫完後按下「Save」儲存當前作品掃描 QR Code 下載圖片。</li>
+        <li>點擊「Clear」可清除畫布重新開始。</li>
+      </ul>
+      <p class="modal-text">點擊右上角「✕」進入繪圖模式。</p>
+    </div>
+  </div>
+
+  <!-- ▷ 3. 繪圖與 UI 容器，預設都隱藏（class="hidden"） -->
+  <div id="canvas-wrapper" class="hidden">
+    <!-- p5.js createCanvas() 會自動插入在這裡 -->
+  </div>
+
+  <div id="ui-container" class="hidden">
+    <!-- TOP：背景縮圖選擇 -->
+  <div id="background-thumbs">
+    <img class="thumb" src="bg_brick.png" onclick="setBackground('brick')" />
+    <img class="thumb" src="bg_shutter.png" onclick="setBackground('shutter')" />
+    <img class="thumb" src="bg_ash.png" onclick="setBackground('ash')" />
+    <img class="thumb" src="bg_alley.png" onclick="setBackground('alley')" />
+  </div>
+
+  <div id="ui-container">
+    <button class="btn neon-btn" onclick="setBrush('neon')">NEON</button>
+    <button class="btn industrial-btn" onclick="setBrush('industrial')">INDUSTRIAL</button>
+    <button class="btn flame-btn" onclick="setBrush('flame')">FLAME</button>
+    <button class="btn smoke-btn" onclick="setBrush('smoke')">SMOKE</button>
+    <button class="btn liquid-btn" onclick="setBrush('liquid')">LIQUID</button>
+    <button class="btn" onclick="clearCanvas()">CLEAR</button>
+    <button class="btn" onclick="showQRCodeForCanvas()">SAVE</button>
+
+    <div id="brush-size-container">
+      <span class="slider-label">Brush Size</span>
+      <input type="range" min="0.3" max="3" step="0.1" value="1" id="brush-slider" />
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+  <script src="sketch.js"></script>
+
+
+  <!-- 彈跳提示 -->
+<div id="qrcode-toast">
+  用手機掃描 QR code 下載你的作品！
+</div>
+
+<!-- QR code 彈窗 -->
+<div id="qrcode-area">
+  <button class="qrcode-close-btn" onclick="hideQRCode()" aria-label="關閉視窗">
+    <span class="qrcode-close-x">&times;</span>
+  </button>
+  <div class="qrcode-img-wrap">
+    <canvas id="qrcode"></canvas>
+  </div>
+</div>
+
+<div id="loading-area">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">圖片生成中...</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+
+
+<script>
+    // 取得需要操作的 DOM 元素
+    const exhibitionScreen = document.getElementById('exhibition-screen');
+    const exhibitionImg = document.getElementById('exhibition-img');
+    const startBtn = document.getElementById('start-btn');
+    const instructionsOverlay = document.getElementById('instructions-overlay');
+    const closeInstructionsBtn = document.getElementById('close-instructions');
+    const canvasWrapper = document.getElementById('canvas-wrapper');
+    const uiContainer = document.getElementById('ui-container');
+
+    // ─── (A) 三張主視覺圖的路徑陣列，請依實際檔案名稱修改
+    const mainVisuals = [
+      'main1.png',
+      'main2.png',
+      'main3.png'
+    ];
+
+    let currentIdx = 0;           // 目前展覽主視覺的索引
+    let slideshowIntervalId = null;// 輪播定時器 ID
+
+    // (B) 啟動展覽輪播：每隔 5 秒切下一張
+    function startExhibitionSlideshow() {
+      // 一開始先顯示陣列裡的第一張（currentIdx 預設為 0）
+      exhibitionImg.src = mainVisuals[currentIdx];
+
+      // 之後每 5 秒更新一次
+      slideshowIntervalId = setInterval(() => {
+        // 依序遞增索引，超過長度就跳回 0
+        currentIdx = (currentIdx + 1) % mainVisuals.length;
+        exhibitionImg.src = mainVisuals[currentIdx];
+      }, 10000);
+    }
+
+    // (C) 停止展覽輪播
+    function stopExhibitionSlideshow() {
+      if (slideshowIntervalId !== null) {
+        clearInterval(slideshowIntervalId);
+        slideshowIntervalId = null;
+      }
+    }
+
+    // (D) 點擊「開始創作」：先跳出使用說明彈窗
+    startBtn.addEventListener('click', () => {
+      // 顯示「使用說明」遮罩
+      instructionsOverlay.classList.remove('hidden');
+      // 同時保留展覽畫面，等待使用者關閉說明後才真正結束展覽
+    });
+
+    // (E) 點擊「✕」關閉使用說明 → 正式進入繪圖模式
+    closeInstructionsBtn.addEventListener('click', () => {
+      // 1. 隱藏使用說明彈窗
+      instructionsOverlay.classList.add('hidden');
+      // 2. 停止展覽輪播、隱藏展覽畫面
+      stopExhibitionSlideshow();
+      exhibitionScreen.classList.add('hidden');
+      // 3. 顯示 canvas + UI
+      canvasWrapper.classList.remove('hidden');
+      uiContainer.classList.remove('hidden');
+      // 4. 啟動 p5.js 繪圖邏輯（見 sketch.js 中 window.enableDrawing()）
+      if (window.enableDrawing) {
+        window.enableDrawing();
+      }
+    });
+
+    // (F) 等頁面 DOM 載入完成後，啟動展覽輪播
+    document.addEventListener('DOMContentLoaded', () => {
+      startExhibitionSlideshow();
+    });
+  </script>
+</body>
+</html>
