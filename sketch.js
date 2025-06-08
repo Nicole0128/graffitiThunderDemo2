@@ -14,7 +14,9 @@ let bgImg;
 let bgMusic = {};        // 用來存放各背景的 p5.SoundFile
 let currentMusic = null; // 正在播放的音樂
 let inactivityTimeout;   // 計時器 id
+let bgLayer;
 const INACTIVITY_DELAY = 30 * 1000; // 30秒
+
 
 function preload() {
   bgImages.brick   = loadImage('bg_brick.png');
@@ -28,6 +30,11 @@ function preload() {
 }
 
 function setup() { 
+   // 行動裝置降為 1，桌機用預設
+  if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    pixelDensity(1);
+    frameRate(30);      // 再搭配限 30 FPS
+  }
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position(0, 0);
   canvas.style('z-index', '-1');
@@ -55,6 +62,11 @@ function setup() {
     .forEach(evt =>
       canvas.elt.addEventListener(evt, resetInactivityTimer)
     );
+   bgLayer = createGraphics(width, height);
+  
+   // 把背景一次畫到 bgLayer 上，之後 draw() 只 background(bgLayer)
+  bgLayer.image(bgImages[currentBackground], 0, 0, width, height);
+
 }
 
 function windowResized() {
@@ -62,6 +74,8 @@ function windowResized() {
 }
 
 function draw() {
+  image(bgLayer, 0, 0);
+
   if (!drawingEnabled) {
     // 如果尚未啟用繪圖，就不做任何事
     return;
@@ -92,6 +106,8 @@ function draw() {
     p.size += 0.1;
     if (p.alpha <= 0) smokeParticles.splice(i, 1);
   }
+
+  
 }
 
 function mouseDragged(event) {
