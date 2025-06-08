@@ -1,3 +1,15 @@
+const bgImageFiles = {
+  brick:   'bg_brick.png',
+  shutter: 'bg_shutter.png',
+  ash:     'bg_ash.png',
+  alley:   'bg_alley.png'
+};
+const bgMusicFiles = {
+  brick:   'bgm_brick.mp3',
+  shutter: 'bgm_shutter.mp3',
+  ash:     'bgm_ash.mp3',
+  alley:   'bgm_alley.mp3'
+};
 let currentBrush = 'neon';
 let currentBackground = 'ash';
 let strokes = [];
@@ -16,15 +28,20 @@ let currentMusic = null; // 正在播放的音樂
 let inactivityTimeout;   // 計時器 id
 const INACTIVITY_DELAY = 30 * 1000; // 30秒
 
-function preload() {
-  bgImages.brick   = loadImage('bg_brick.png');
-  bgImages.shutter = loadImage('bg_shutter.png');
-  bgImages.ash   = loadImage('bg_ash.png');
-  bgImages.alley   = loadImage('bg_alley.png');
-  bgMusic.brick   = loadSound('bgm_brick.mp3');
-  bgMusic.shutter = loadSound('bgm_shutter.mp3');
-  bgMusic.ash   = loadSound('bgm_ash.mp3');
-  bgMusic.alley   = loadSound('bgm_alley.mp3');
+// 靜默預載：不顯示 loading overlay，就偷偷把圖和音拉下來快取
+function silentPreloadAssets(name) {
+  if (!bgImages[name]) {
+    loadImage(bgImageFiles[name],
+      img => { bgImages[name] = img; console.log(`Preloaded image: ${name}`); },
+      err => console.warn(`Image preload failed: ${name}`, err)
+    );
+  }
+  if (!bgMusic[name]) {
+    loadSound(bgMusicFiles[name],
+      snd => { bgMusic[name] = snd; console.log(`Preloaded sound: ${name}`); },
+      err => console.warn(`Sound preload failed: ${name}`, err)
+    );
+  }
 }
 
 function setup() { 
@@ -55,6 +72,21 @@ function setup() {
     .forEach(evt =>
       canvas.elt.addEventListener(evt, resetInactivityTimer)
     );
+
+     userStartAudio();  // p5.js 內建，呼叫後觸發 touch 或 click 就能播聲音
+
+   // 1) 手機要先解鎖 AudioContext
+     userStartAudio();  // p5.js 內建，呼叫後觸發 touch 或 click 就能播聲音
+  // // 2) 空閒時才跑靜默預載，不會卡畫面
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => {
+      Object.keys(bgImageFiles).forEach(name => silentPreloadAssets(name));
+    });
+  } else {
+    setTimeout(() => {
+      Object.keys(bgImageFiles).forEach(name => silentPreloadAssets(name));
+    }, 3000);
+  }
 }
 
 function windowResized() {
