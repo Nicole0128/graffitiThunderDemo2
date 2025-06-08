@@ -3,39 +3,31 @@ let currentBackground = 'ash';
 let strokes = [];
 let smokeParticles = [];
 let brushSize = 1.0;
+let bgImages = {};
 let drawingEnabled = false;
 let canvas; 
 let isDrawing = false;
 let lastX, lastY;
 // 紀錄目前正在畫的指標型別：'pen' / 'touch' / 'mouse' / null
 let pointerActiveType = null;
-let bgImages = {}, loadedBg = {};
-let bgMusic = {}, loadedBgm = {};
+let bgImg;
+let bgMusic = {};        // 用來存放各背景的 p5.SoundFile
 let currentMusic = null; // 正在播放的音樂
 let inactivityTimeout;   // 計時器 id
-let bgLayer;
 const INACTIVITY_DELAY = 30 * 1000; // 30秒
-const toPreload = ['brick','shutter','smoke','alley'];
-let preloadIndex = 0;
-
 
 function preload() {
-  //bgImages.brick   = loadImage('bg_brick.png');
-  //bgImages.shutter = loadImage('bg_shutter.png');
+  bgImages.brick   = loadImage('bg_brick.png');
+  bgImages.shutter = loadImage('bg_shutter.png');
   bgImages.ash   = loadImage('bg_ash.png');
-  //bgImages.alley   = loadImage('bg_alley.png');
-  //bgMusic.brick   = loadSound('bgm_brick.mp3');
-  //bgMusic.shutter = loadSound('bgm_shutter.mp3');
+  bgImages.alley   = loadImage('bg_alley.png');
+  bgMusic.brick   = loadSound('bgm_brick.mp3');
+  bgMusic.shutter = loadSound('bgm_shutter.mp3');
   bgMusic.ash   = loadSound('bgm_ash.mp3');
-  //bgMusic.alley   = loadSound('bgm_alley.mp3');
+  bgMusic.alley   = loadSound('bgm_alley.mp3');
 }
 
 function setup() { 
-   // 行動裝置降為 1，桌機用預設
-  if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-    pixelDensity(1);
-    frameRate(30);      // 再搭配限 30 FPS
-  }
   canvas = createCanvas(windowWidth, windowHeight);
   canvas.position(0, 0);
   canvas.style('z-index', '-1');
@@ -63,13 +55,6 @@ function setup() {
     .forEach(evt =>
       canvas.elt.addEventListener(evt, resetInactivityTimer)
     );
-   bgLayer = createGraphics(width, height);
-  
-   // 把背景一次畫到 bgLayer 上，之後 draw() 只 background(bgLayer)
-  bgLayer.image(bgImages[currentBackground], 0, 0, width, height);
-
-  preloadNext();
-
 }
 
 function windowResized() {
@@ -77,8 +62,6 @@ function windowResized() {
 }
 
 function draw() {
-  image(bgLayer, 0, 0);
-
   if (!drawingEnabled) {
     // 如果尚未啟用繪圖，就不做任何事
     return;
@@ -109,8 +92,6 @@ function draw() {
     p.size += 0.1;
     if (p.alpha <= 0) smokeParticles.splice(i, 1);
   }
-
-  
 }
 
 function mouseDragged(event) {
@@ -247,28 +228,13 @@ function setBackground(name) {
   if (currentMusic && currentMusic.isPlaying()) {
     currentMusic.stop();
   }
-   // 如果还没载入，就开始加载
-  if (!bgImages[name]) {
 
-  // 1) 先载图
-    loadImage(`bg_${name}.png`, img => {
-      bgImages[name] = img;
-
-      // 2) 再载音
-      loadSound(`bgm_${name}.mp3`, snd => {
-        bgMusic[name] = snd;
-        hideLoadingSpinner();
-        // 切换完毕，播放新音
-        currentMusic = snd;
-        currentMusic.loop();
-      });
-    });
-  }
-  // 如果已载入，直接切换
-  else {
-    currentMusic = bgMusic[name];
+  // 播放新背景音樂
+  let next = bgMusic[name];
+  if (next) {
+    currentMusic = next;
     currentMusic.loop();
-    currentMusic.setVolume(0.5); 
+    currentMusic.setVolume(0.5);
   }
   
   resetInactivityTimer();
@@ -433,13 +399,3 @@ function resetInactivityTimer() {
   }, INACTIVITY_DELAY);
 }
 
-function preloadNext() {
-  if (preloadIndex >= toPreload.length) return;
-  const name = toPreload[preloadIndex++];
-  if (!bgImages[name]) {
-    loadImage(`bg_${name}.png`, img => bgImages[name] = img);
-    loadSound(`bgm_${name}.mp3`, snd => bgMusic[name] = snd);
-  }
-  // 下一次再延迟调用，比如每隔 3 秒预载一个
-  setTimeout(preloadNext, 3000);
-}

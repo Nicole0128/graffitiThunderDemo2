@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Graffiti Brushes</title>
   <link rel="stylesheet" href="style.css" />
-  <script>
-    window.isLowEnd = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2;
-  </script>
 </head>
 
 <body>
@@ -15,7 +12,6 @@
   <div id="exhibition-screen">
     <!-- 這裡放一個 <img>，src 會由 JS 輪播三張 main*.jpg -->
     <img id="exhibition-img"
-         loading="lazy"
          src="main1.png"
          alt="Exhibition Visual" />
 
@@ -52,10 +48,10 @@
   <div id="ui-container" class="hidden">
     <!-- TOP：背景縮圖選擇 -->
   <div id="background-thumbs">
-    <img class="thumb"  loading="lazy" src="bg_brick.png" onclick="setBackground('brick')" />
-    <img class="thumb"  loading="lazy" src="bg_shutter.png" onclick="setBackground('shutter')" />
-    <img class="thumb"  loading="lazy" src="bg_ash.png" onclick="setBackground('ash')" />
-    <img class="thumb"  loading="lazy" src="bg_alley.png" onclick="setBackground('alley')" />
+    <img class="thumb" src="bg_brick.png" onclick="setBackground('brick')" />
+    <img class="thumb" src="bg_shutter.png" onclick="setBackground('shutter')" />
+    <img class="thumb" src="bg_ash.png" onclick="setBackground('ash')" />
+    <img class="thumb" src="bg_alley.png" onclick="setBackground('alley')" />
   </div>
 
   <div id="ui-container">
